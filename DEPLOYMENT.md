@@ -243,4 +243,10 @@ Merges to `main`/`master` (and manual **workflow_dispatch**) run [`.github/workf
 
 Required GitHub secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, `GH_PACKAGES_READ_TOKEN` (PAT with `read:packages` for `@jeffgo10/*`), `NEXT_PUBLIC_API_TOKEN`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_REGION`, and optionally `NEXT_PUBLIC_FIREBASE_FUNCTION_URL`.
 
+The deploy SA needs **Service Usage Consumer** (and usually Artifact Registry + Cloud Build roles) or CI fails with `403 Permission denied to get service [artifactregistry.googleapis.com]`. See README secret table for the full role list. As project owner you can also enable APIs once:
+
+```bash
+gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com cloudfunctions.googleapis.com --project=exifilixir
+```
+
 **Out of CI:** set the Cloud Function `API_TOKEN` once in Cloud Run / Firebase Console so it matches `NEXT_PUBLIC_API_TOKEN`. See README “CI / GitHub Actions” for the full table.
