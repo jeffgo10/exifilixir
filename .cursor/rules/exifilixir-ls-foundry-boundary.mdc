@@ -1,0 +1,69 @@
+---
+description: Never edit ls-foundry from this repo; hand off engine work; consumer pin rules for @jeffgo10/*
+alwaysApply: true
+---
+
+# ls-foundry boundary (EXIFilixir)
+
+**Never** create, edit, commit, or publish files under `~/projects/ls-foundry` (or any clone of [ls-foundry](https://github.com/jeffgo10/ls-foundry)) from an **exifilixir** agent session. Engine changes belong to an **ls-foundry agent** only.
+
+This repo may consume published `@jeffgo10/*` packages (GitHub Packages). Prefer `/update-ls-foundry-packages` after a release. Do not vendor or copy package source into this repo.
+
+## Consumer packages (EXIFilixir)
+
+Primary fit for 360° preview / shared utilities:
+
+| Package | Role | Notes | Pin |
+|---|---|---|---|
+| `@jeffgo10/panorama-viewer` | React equirectangular viewer (Pannellum) | Client-only; import `styles.css`; `transpilePackages` in Next; `dynamic(..., { ssr: false })` | `0.1.2` |
+| `@jeffgo10/helpers` | Shared helpers | Subpaths: `brand`, `browser`, `clipboard`, `gestures`, `image`, `text`, `ui` — prefer these over re-implementing | `1.5.0` |
+
+Optional / unlikely here unless product expands:
+
+| Package | When |
+|---|---|
+| `@jeffgo10/gl-viewer` | LiDAR / WebXR / Three.js demos (see LiteShade Media) |
+| `@jeffgo10/react-canvas-designer`, `shared-types`, `canvas-upscaler` | StickPak canvas/print pipeline — not EXIFilixir |
+
+**Pins:** when packages are added, record exact versions in `package.json` and update this table. Exact pins (no `^`) need an explicit version bump via `/update-ls-foundry-packages`.
+
+## Auth for GitHub Packages
+
+- Copy `.npmrc.example` → `.npmrc` and set `GITHUB_TOKEN` (classic PAT with `read:packages`).
+- Never commit a `.npmrc` that embeds a raw token.
+- Never commit the token into rules, PRs, or handoffs.
+
+## When EXIFilixir needs engine work
+
+1. Do **not** patch ls-foundry yourself.
+2. Give the user a **paste-ready brief** for the ls-foundry agent (template below).
+3. After publish, run `/update-ls-foundry-packages` here and wire the app.
+
+## Paste template — ls-foundry agent
+
+```text
+## Task — <short title>
+
+Repo: jeffgo10/ls-foundry.
+
+### Goal
+<what EXIFilixir needs and why — e.g. panorama preview API, helpers/image util>
+
+### Required work
+1. Packages / versions to bump (likely panorama-viewer and/or helpers)
+2. API / type / CSS export changes
+3. Publish to GitHub Packages; confirm npm view dependencies
+
+### Out of scope
+- exifilixir UI / Firebase Functions
+
+### Done when
+- Published versions + deps verified
+- Tell consumer: run /update-ls-foundry-packages in exifilixir
+```
+
+## Do not
+
+- Edit, commit, or `pnpm publish` from ls-foundry while working in exifilixir
+- Duplicate panorama-viewer / helpers logic in-repo “just for now”
+- Assume `npm update` jumps exact pins — bump versions explicitly when needed

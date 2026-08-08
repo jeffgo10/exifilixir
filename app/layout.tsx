@@ -50,10 +50,10 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        url: '/exifilixir.svg',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: `${siteName} logo`,
+        alt: `${siteName} — Fix Facebook 360° EXIF for DJI panoramas`,
       },
     ],
   },
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title,
     description,
-    images: ['/exifilixir.svg'],
+    images: ['/og-image.png'],
   },
   manifest: '/manifest.json',
   appleWebApp: {
@@ -88,8 +88,19 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Use existing assets to avoid 404s in dev/prod */}
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
         <link rel="icon" href="/exifilixir.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/exifilixir.svg" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Datatype:wght@300;400;500;600;700;800&display=swap"
+        />
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger

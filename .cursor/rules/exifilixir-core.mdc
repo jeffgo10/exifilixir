@@ -1,0 +1,77 @@
+---
+description: EXIFilixir — stack, image pipeline, auth, Firebase deploy, and architecture constraints
+alwaysApply: true
+---
+
+# EXIFilixir — Core
+
+PWA that fixes EXIF metadata for 360° panoramas (e.g. DJI) so they open in Facebook’s 360° viewer: Sharp resizes to 2:1, ExifTool injects GPano XMP.
+
+## Critical architecture
+
+- **Static export only** — `output: "export"` in `next.config.js`; build writes to `out/` for Firebase Hosting. No server-side Next.js runtime in production.
+- **Image API is Cloud Functions** — production (and local via emulator) uses `processImage` in `functions/src/index.ts`. `app/api/process/` is empty; do not rely on Next.js API routes for Firebase deploys.
+- **Client endpoint selection** — `app/utils/api.ts` `getApiEndpoint()`: explicit `NEXT_PUBLIC_FIREBASE_FUNCTION_URL` → Firebase Hosting hostname → localhost emulator (`:5001`) → deployed function URL.
+- **PWA** — `next-pwa` writes to `public/` (disabled in development). Regenerate icons/OG via `npm run assets:generate` (ImageMagick `convert` required).
+- **ls-foundry packages** — `@jeffgo10/panorama-viewer` (`0.1.2`) for post-fix 360° preview; `@jeffgo10/helpers` (`1.5.0`) for brand / shared utils. Never edit ls-foundry here — see `exifilixir-ls-foundry-boundary.mdc` and `/update-ls-foundry-packages`. Auth: `.npmrc.example` + `GITHUB_TOKEN`.
+- **Vault (Obsidian):** `exifilixir/` — sole source for project notes; sync via `/sync-obsidian-notes` (see `exifilixir-obsidian-sync.mdc`).
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 14 (App Router), TypeScript |
+| UI | Ant Design 5 |
+| Image | Sharp (2:1 aspect), `exiftool-vendored` (GPano XMP) |
+| Shared packages | `@jeffgo10/panorama-viewer` `0.1.2`; `@jeffgo10/helpers` `1.5.0` — provider: **ls-foundry** |
+| Auth | Shared API token (`API_TOKEN` / `NEXT_PUBLIC_API_TOKEN`) |
+| Hosting | Firebase Hosting (`out/`) + Cloud Functions (`nodejs22`) |
+| PWA | next-pwa (production only) |
+
+## Routes & key paths
+
+| Path | Purpose |
+|---|---|
+| `/` | Upload UI (`app/page.tsx`) — post-fix 360 preview, download, LiteShadeBrand |
+| `app/components/PanoramaPreview.tsx` | Client-only `@jeffgo10/panorama-viewer` wrapper |
+| `app/layout.tsx` | Root layout, Ant Design, metadata / OG, Datatype Google Font |
+| `app/utils/api.ts` | Function URL resolution |
+| `app/utils/auth.ts` | Client token helper |
+| `functions/src/index.ts` | `processImage` — resize + EXIF write |
+| `scripts/generate-public-images.mjs` | favicon, PWA icons, OG PNG from SVG |
+
+## Env (names only — never commit values)
+
+| Variable | Where |
+|---|---|
+| `API_TOKEN` | Cloud Function / `functions/.env` (emulator) |
+| `NEXT_PUBLIC_API_TOKEN` | Frontend build (must match function token in prod) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical / OG metadata |
+| `NEXT_PUBLIC_FIREBASE_FUNCTION_URL` | Optional explicit function URL |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Default project: `exifilixir` |
+| `NEXT_PUBLIC_FIREBASE_REGION` | Default: `us-central1` |
+
+## Deploy & local commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Next.js on `:3000` |
+| `npm run functions:serve` | Functions emulator (needs system `exiftool` on PATH) |
+| `npm run build` | Static export → `out/` |
+| `npm run deploy:hosting` | Build + hosting only |
+| `npm run functions:deploy` | Build + deploy functions |
+| `npm run deploy:all` | Build app + functions, then `firebase deploy` |
+| `npm run assets:generate` | Regenerate public PNGs from SVGs |
+| `npm run lint` | ESLint |
+
+**CI:** `.github/workflows/firebase-deploy.yml` — push to `main`/`master` or manual dispatch deploys hosting + functions. Secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, `GH_PACKAGES_READ_TOKEN`, `NEXT_PUBLIC_*` (see README). Function `API_TOKEN` is set once in Cloud Run, not rewritten by CI.
+
+## Agent conventions
+
+- Prefer client components for upload / Ant Design interaction; keep processing logic in **functions**, not reintroduced as Next API routes unless targeting Vercel.
+- Emulator ExifTool: system binary; production: vendored script via perl — do not “fix” by assuming one path works everywhere.
+- Do not re-implement panorama viewer / helpers — consume `@jeffgo10/*` and bump via `/update-ls-foundry-packages`.
+- Never commit `.env*`, `.npmrc` with a raw PAT, `API_TOKEN`, or build secrets.
+- Single Next.js app + `functions/` — no monorepo patterns.
+- Mobile-first CSS — see `clean-code.mdc`.
+- UI/UX — always-on: `.cursor/rules/UI-UX/design-core.mdc` + `cursor-design-behavior-constraints.mdc`; TSX work pulls `UI-UX/frontend/*`; deeper topics in `UI-UX/binders/`. Prefer **Ant Design 5** patterns.
