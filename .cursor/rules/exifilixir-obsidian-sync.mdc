@@ -1,0 +1,62 @@
+---
+description: Obsidian vault sync for EXIFilixir — MCP probe, folder map, write workflow
+alwaysApply: false
+---
+
+# EXIFilixir — Obsidian sync
+
+Use with slash command `/sync-obsidian-notes`.
+
+**Single source of truth for project notes:** Obsidian vault folder `exifilixir/` (not a repo copy).
+
+## MCP
+
+- **Server:** `user-MCP_DOCKER`
+- **Pre-check probe:** `obsidian_list_files_in_dir` with `{ "dirpath": "exifilixir" }`
+- If probe fails: stop vault writes; report error; rules-only mode may still run.
+
+Read tool schemas via `GetMcpTools` before first write in a session.
+
+## Vault folder map
+
+| Note | Use for |
+|---|---|
+| `exifilixir/00 Index.md` | Index of all project notes |
+| `exifilixir/01 Timeline and Git History.md` | Chronological phases, commits |
+| `exifilixir/02 Image Processing Pipeline.md` | Sharp 2:1, ExifTool GPano, `processImage` |
+| `exifilixir/03 Deployment Firebase and Static Export.md` | Hosting `out/`, Functions, CI |
+| `exifilixir/04 Security and API Tokens.md` | `API_TOKEN` / `NEXT_PUBLIC_API_TOKEN` |
+| `exifilixir/05 PWA and Frontend UX.md` | Manifest, icons, Ant Design UI |
+| `exifilixir/06 Local Dev and Emulators.md` | `npm run dev`, Functions emulator |
+| `exifilixir/07 SEO Donations and Ops.md` | Site URL, OG, robots, donate |
+| `exifilixir/08 Decisions Log.md` | Architecture / product decisions |
+| `exifilixir/09 SEO Audit (2026-05-29).md` | Historical SEO audit (patch only if relevant) |
+| `exifilixir/10 Cursor rules and slash commands.md` | `.cursor/` rules and commands (create if missing) |
+| `exifilixir/11 ls-foundry and GitHub Packages.md` | `@jeffgo10/*`, panorama-viewer (create if missing) |
+| `exifilixir/noteworthy/Notes — <Topic>.md` | Bugs, gotchas, non-obvious fixes |
+| `exifilixir/noteworthy/EXIFilixir Engineering Notes.md` | Index of noteworthy notes |
+
+**Noteworthy naming:** `Notes — <Topic>.md` under `exifilixir/noteworthy/`.
+
+## Source of truth order
+
+1. Repo code + `README.md` / `DEPLOYMENT.md` / `SECURITY.md`
+2. Obsidian `exifilixir/`
+3. Conversation
+
+If Obsidian is stale, update Obsidian to match repo — not the reverse.
+
+## Write workflow
+
+1. MCP pre-check (`obsidian_list_files_in_dir`)
+2. `obsidian_get_file_contents` on vault target before edit
+3. `obsidian_simple_search` or `obsidian_list_files_in_dir` to avoid duplicates
+4. Prefer `obsidian_patch_content` for sections; `obsidian_append_content` for new notes or changelogs
+5. Re-read vault note after large writes
+
+## Do not
+
+- Put secrets, tokens, or `.env` values in notes
+- Create a repo mirror of vault notes (no `.obsidian-sync/` or `docs/exifilixir/` copy)
+- Write to `LiteShadeMedia/`, `StickPak/`, `CrowdBadge/`, or `LS Foundry/` for EXIFilixir work
+- Create duplicate noteworthies under slightly different titles

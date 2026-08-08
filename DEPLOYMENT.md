@@ -229,5 +229,18 @@ firebase deploy --only hosting
 Or deploy both:
 ```bash
 npm run build
+cd functions && npm run build && cd ..
 firebase deploy
 ```
+
+## CI / GitHub Actions
+
+Merges to `main`/`master` (and manual **workflow_dispatch**) run [`.github/workflows/firebase-deploy.yml`](.github/workflows/firebase-deploy.yml):
+
+1. `npm ci` + `npm run build` (static export → `out/`) with `NEXT_PUBLIC_*` secrets
+2. `functions/` install + build
+3. `firebase deploy --only hosting,functions` via `FIREBASE_SERVICE_ACCOUNT`
+
+Required GitHub secrets: `FIREBASE_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, `GH_PACKAGES_READ_TOKEN` (PAT with `read:packages` for `@jeffgo10/*`), `NEXT_PUBLIC_API_TOKEN`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_REGION`, and optionally `NEXT_PUBLIC_FIREBASE_FUNCTION_URL`.
+
+**Out of CI:** set the Cloud Function `API_TOKEN` once in Cloud Run / Firebase Console so it matches `NEXT_PUBLIC_API_TOKEN`. See README “CI / GitHub Actions” for the full table.

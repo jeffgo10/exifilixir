@@ -1,24 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { InboxOutlined, DownloadOutlined, LoadingOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Upload as AntUpload, Button, Card, message, Typography, Space, Alert } from 'antd';
 import Image from 'next/image';
 import type { UploadFile, UploadProps } from 'antd';
+import PanoramaPreview from './components/PanoramaPreview';
 import { getApiEndpoint } from './utils/api';
 import { getApiToken } from './utils/auth';
+import { LiteShadeBrand } from '@jeffgo10/helpers/brand';
+import { ScrambleRevealProvider } from '@jeffgo10/helpers/text';
 
-const { Title, Paragraph, Text } = Typography;
+const { Paragraph, Text } = Typography;
 
 export default function Home() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [processing, setProcessing] = useState(false);
   const [processedFile, setProcessedFile] = useState<string | null>(null);
   const [processedFileName, setProcessedFileName] = useState<string>('');
+  const previewSectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (processedFile) {
+        URL.revokeObjectURL(processedFile);
+      }
+    };
+  }, [processedFile]);
+
+  useEffect(() => {
+    if (!processedFile) return;
+    previewSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [processedFile]);
 
   const handleUpload: UploadProps['customRequest'] = async ({ file, onSuccess, onError }) => {
     setProcessing(true);
-    setProcessedFile(null);
+    setProcessedFile((previousUrl) => {
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl);
+      }
+      return null;
+    });
     
     try {
       const formData = new FormData();
@@ -208,6 +233,7 @@ export default function Home() {
           </Card>
 
           {processedFile && (
+            <div ref={previewSectionRef}>
             <Card 
               style={{ 
                 background: '#f0f9ff',
@@ -222,35 +248,29 @@ export default function Home() {
                     Image processed successfully!
                   </Text>
                 </div>
-                <div style={{ 
-                  width: '100%', 
-                  maxHeight: '400px', 
-                  overflow: 'hidden',
-                  borderRadius: '8px',
-                  border: '1px solid #d9d9d9'
-                }}>
-                  <img 
-                    src={processedFile} 
-                    alt="Processed" 
-                    style={{ 
-                      width: '100%', 
-                      height: 'auto',
-                      display: 'block'
-                    }} 
-                  />
+                <div
+                  style={{
+                    width: '100%',
+                    overflow: 'hidden',
+                    borderRadius: '8px',
+                    border: '1px solid #d9d9d9',
+                  }}
+                >
+                  <PanoramaPreview imageUrl={processedFile} />
                 </div>
+                <Text type="secondary">Drag to look around · scroll to zoom</Text>
                 <Button
                   type="primary"
                   icon={<DownloadOutlined />}
                   size="large"
                   onClick={handleDownload}
                   block
-                  style={{ marginTop: '1rem' }}
                 >
                   Download Fixed Image
                 </Button>
               </Space>
             </Card>
+            </div>
           )}
 
           <Card style={{ borderRadius: '8px' }}>
@@ -288,6 +308,19 @@ export default function Home() {
                   </section>
                 </form>
               </div>
+              <ScrambleRevealProvider>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+                  <LiteShadeBrand
+                    color="#000000"
+                    size={20}
+                    referral="exifilixir"
+                    style={{
+                      fontFamily:
+                        '"Datatype", ui-sans-serif, system-ui, sans-serif',
+                    }}
+                  />
+                </div>
+              </ScrambleRevealProvider>
             </Space>
           </Card>
         </Space>

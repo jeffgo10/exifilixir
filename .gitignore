@@ -26,6 +26,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# GitHub Packages auth (use .npmrc.example + GITHUB_TOKEN)
+.npmrc
+
 # vercel
 .vercel
 

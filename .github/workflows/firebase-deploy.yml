@@ -1,0 +1,70 @@
+name: Deploy to Firebase (Hosting + Functions)
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch: {}
+
+concurrency:
+  group: firebase-deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@jeffgo10'
+        env:
+          # PAT with read:packages for @jeffgo10/* on GitHub Packages (see repo secrets).
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+
+      - name: Install root deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+        run: npm ci
+
+      - name: Build static site (out/)
+        env:
+          # Public env baked into the client bundle at build time
+          NEXT_PUBLIC_API_TOKEN: ${{ secrets.NEXT_PUBLIC_API_TOKEN }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_REGION: ${{ secrets.NEXT_PUBLIC_FIREBASE_REGION }}
+          NEXT_PUBLIC_FIREBASE_FUNCTION_URL: ${{ secrets.NEXT_PUBLIC_FIREBASE_FUNCTION_URL }}
+        run: npm run build
+
+      - name: Install functions deps
+        working-directory: functions
+        run: npm ci
+
+      - name: Build functions
+        working-directory: functions
+        run: npm run build
+
+      - name: Install Firebase CLI
+        run: npm i -g firebase-tools
+
+      - name: Authenticate to Google Cloud (service account)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> $GITHUB_ENV
+
+      # Function API_TOKEN is set ONCE outside CI (Cloud Run / Firebase Console).
+      # Do not call firebase functions:secrets:set from this workflow.
+
+      - name: Deploy (hosting + functions)
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: firebase --project "$FIREBASE_PROJECT_ID" deploy --only hosting,functions

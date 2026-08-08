@@ -84,14 +84,22 @@ npm run dev
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## PWA Icons
+## Brand assets (PWA + SEO)
 
-Before deploying, you need to add PWA icons to the `public` directory:
-- `icon-192x192.png` (192x192 pixels)
-- `icon-512x512.png` (512x512 pixels)
-- `favicon.ico`
+Included in `public/`:
 
-You can generate these from any image using online tools or image editing software.
+- `exifilixir.svg` — homepage logo
+- `icon-192x192.png`, `icon-512x512.png` — PWA manifest icons
+- `og-image.png` (1200×630) — Open Graph / Twitter preview
+- `favicon.png` — browser tab icon
+
+To regenerate PNGs after editing the SVG sources (`exifilixir-icon.svg`, `og-image.svg`):
+
+```bash
+npm run assets:generate
+```
+
+Requires [ImageMagick](https://imagemagick.org/) (`convert` on your PATH).
 
 ## Deployment
 
@@ -176,6 +184,25 @@ firebase deploy --only functions
 ```bash
 firebase deploy --only hosting
 ```
+
+#### CI / GitHub Actions
+
+On push to `main` or `master` (including merged PRs), [`.github/workflows/firebase-deploy.yml`](.github/workflows/firebase-deploy.yml) builds the static export + functions and deploys both. You can also run it manually via **Actions → Deploy to Firebase → Run workflow**.
+
+Configure these **repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Notes |
+|--------|--------|
+| `FIREBASE_SERVICE_ACCOUNT` | Full JSON of a GCP service account with Firebase Hosting + Cloud Functions deploy permissions |
+| `FIREBASE_PROJECT_ID` | Firebase / GCP project ID (e.g. `exifilixir`) |
+| `GH_PACKAGES_READ_TOKEN` | Classic PAT with `read:packages` for `@jeffgo10/*` (GitHub Packages) |
+| `NEXT_PUBLIC_API_TOKEN` | Same value as the Cloud Function `API_TOKEN` (baked into the client at build time) |
+| `NEXT_PUBLIC_SITE_URL` | Production site URL (e.g. `https://exifilixir.web.app`) |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Usually `exifilixir` |
+| `NEXT_PUBLIC_FIREBASE_REGION` | Usually `us-central1` |
+| `NEXT_PUBLIC_FIREBASE_FUNCTION_URL` | Optional but recommended: `https://us-central1-<project>.cloudfunctions.net/processImage` |
+
+**One-time (outside CI):** set Cloud Function `API_TOKEN` in [Google Cloud Console](https://console.cloud.google.com) → Cloud Run → `processimage` → Variables & secrets. Do not set it from the workflow on every deploy.
 
 #### Environment Detection
 

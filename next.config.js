@@ -15,6 +15,7 @@ const nextConfig = {
   },
   // Disable server-side features for static export
   trailingSlash: true, // Helps with Firebase Hosting routing
+  transpilePackages: ['@jeffgo10/panorama-viewer', '@jeffgo10/helpers'],
 };
 
 module.exports = withPWA(nextConfig);
