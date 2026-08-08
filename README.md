@@ -193,7 +193,7 @@ Configure these **repository secrets** (Settings → Secrets and variables → A
 
 | Secret | Notes |
 |--------|--------|
-| `FIREBASE_SERVICE_ACCOUNT` | Full JSON key of a GCP service account (paste the entire file contents). Needs Firebase Hosting Admin + Cloud Functions Developer (or Editor) on project `exifilixir`. CI uses `google-github-actions/auth`, not `firebase login`. |
+| `FIREBASE_SERVICE_ACCOUNT` | **Full contents** of a GCP service account JSON key (must start with `{`, include `private_key` / `client_email`). Easiest: `gh secret set FIREBASE_SERVICE_ACCOUNT < ./path-to-key.json`. Needs Firebase Hosting Admin + Cloud Functions Developer (or Editor) on `exifilixir`. Do **not** paste a file path, `.p12`, or binary. |
 | `FIREBASE_PROJECT_ID` | Firebase / GCP project ID (e.g. `exifilixir`) |
 | `GH_PACKAGES_READ_TOKEN` | Classic PAT with `read:packages` for `@jeffgo10/*` (GitHub Packages) |
 | `NEXT_PUBLIC_API_TOKEN` | Same value as the Cloud Function `API_TOKEN` (baked into the client at build time) |
