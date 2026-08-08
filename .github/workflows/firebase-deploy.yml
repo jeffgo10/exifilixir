@@ -54,11 +54,34 @@ jobs:
       - name: Install Firebase CLI
         run: npm i -g firebase-tools
 
-      # Application Default Credentials for firebase-tools (not interactive `firebase login`).
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      # FIREBASE_SERVICE_ACCOUNT must be the full service-account JSON key text
+      # (starts with `{`). Prefer: gh secret set FIREBASE_SERVICE_ACCOUNT < key.json
+      - name: Write and validate Google credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/firebase-sa.json"
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT// }" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is empty. Paste the full GCP service account JSON key."
+            exit 1
+          fi
+          # Accept raw JSON or base64-encoded JSON
+          if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | head -c 1 | grep -q '{'; then
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$OUT"
+          else
+            if ! printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 --decode > "$OUT" 2>/dev/null; then
+              echo "::error::FIREBASE_SERVICE_ACCOUNT is not JSON and not base64. Re-create the secret from the downloaded .json key file."
+              exit 1
+            fi
+          fi
+          if ! python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d.get('type')=='service_account', d.get('type'); assert 'private_key' in d and 'client_email' in d" "$OUT"; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT is not a valid GCP service account key JSON (need type=service_account, private_key, client_email)."
+            echo "::error::Download a new JSON key from GCP IAM → Service accounts → Keys, then: gh secret set FIREBASE_SERVICE_ACCOUNT < ./sa.json"
+            exit 1
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$OUT" >> "$GITHUB_ENV"
+          echo "Service account credentials JSON validated."
 
       # Function API_TOKEN is set ONCE outside CI (Cloud Run / Firebase Console).
       # Do not call firebase functions:secrets:set from this workflow.
